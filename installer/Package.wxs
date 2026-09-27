@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <!-- Per-user install: no admin rights, files go to %LOCALAPPDATA%\Programs\SavingsCoach, which is
+       writable (the app keeps its SQLite database and check-in history next to its data files). -->
+  <Package Name="Savings Coach (GESA hackathon demo)"
+           Manufacturer="GESA Hackathon Team"
+           Version="1.0.0"
+           UpgradeCode="6F1C2B7A-3D54-4E8B-9A0C-5B7D1E2F3A44"
+           Scope="perUser"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Savings Coach is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="SavingsCoach" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppMenuFolder" Name="Savings Coach">
+        <Component Id="StartMenuShortcut" Guid="B2D1A7E4-8C3F-4F6A-9E15-7A0C4D9B2E61">
+          <Shortcut Id="AppShortcut"
+                    Name="Savings Coach"
+                    Description="GESA paycheck savings coach demo (synthetic data only)"
+                    Target="[INSTALLFOLDER]SavingsCoach.exe"
+                    WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="RemoveAppMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\GESA\SavingsCoach" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(SourceDir)\**" />
+    </ComponentGroup>
+
+    <Feature Id="Main" Title="Savings Coach" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+  </Package>
+</Wix>

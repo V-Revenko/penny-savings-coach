@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savings Coach</title>
+<style>
+  :root {
+    /* GESA brand: --brand is the only fill in gesa.com's blue-logo.svg; --text confirmed from the site. */
+    --brand: #4356FF;
+    --brand-dark: #2F3EC4;
+    --brand-soft: #E8EBFF;
+    --text: #191919;
+    --muted: #5F6672;
+    --bg: #F5F6FA;
+    --card: #FFFFFF;
+    --line: #E3E6EE;
+    --success: #2F855A;
+    --success-soft: #E4F3EA;
+    --attention: #B7791F;
+    --attention-soft: #FFF4DC;
+    /* Auditor-only. Never on member-facing screens. */
+    --audit-red: #B3261E;
+    --audit-red-soft: #FBE9E7;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #DDE1EA; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text); }
+  .stage { min-height: 100vh; display: flex; align-items: center; justify-content: center; gap: 28px; padding: 24px 16px; flex-wrap: wrap; }
+
+  /* ---------- phone frame ---------- */
+  .phone { width: 390px; max-width: 100%; height: 820px; max-height: 94vh; background: var(--bg); border-radius: 40px; border: 10px solid #1a1f23; box-shadow: 0 30px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; position: relative; flex: none; }
+  .notch { height: 26px; background: #1a1f23; border-radius: 0 0 18px 18px; width: 150px; margin: 0 auto; flex: none; }
+  .appbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 6px; flex: none; }
+  .appbar .title { font-size: 17px; font-weight: 700; color: var(--brand); margin: 0; }
+  .appbar .pilot { font-size: 11px; color: var(--muted); margin: 2px 0 0; }
+  .bell { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); }
+  .bell.on { color: var(--brand); }
+  .bell svg { width: 22px; height: 22px; }
+  .bell .count { position: absolute; top: 4px; right: 4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center; padding: 0 5px; }
+  .bell .count.show { display: flex; }
+  main { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 16px 24px; }
+  main > * { max-width: 100%; }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--card); border-radius: var(--radius); padding: 18px 16px; margin: 10px 0; border: 1px solid var(--line); overflow-wrap: anywhere; }
+  .card.soft { background: var(--brand-soft); border-color: transparent; }
+  .penny { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex: none; overflow: hidden; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .penny .name { font-weight: 700; font-size: 15px; margin: 0; }
+  .penny .ai { font-size: 11.5px; color: var(--muted); margin: 0; }
+  .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 4px; }
+  .hero { font-size: 42px; font-weight: 800; color: var(--brand); margin: 0; line-height: 1.1; letter-spacing: -.5px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 4px 0 12px; }
+  .msg { font-size: 16.5px; line-height: 1.5; margin: 0 0 6px; }
+  .badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark); font-weight: 600; white-space: nowrap; }
+  .badge.tmpl, .badge.warn { background: var(--attention-soft); color: var(--attention); }
+  .badge.pass, .badge.ok { background: var(--success-soft); color: var(--success); }
+  .badge.fail { background: var(--audit-red-soft); color: var(--audit-red); }
+  .badge.muted { background: #EEF0F5; color: var(--muted); }
+  .bar { height: 10px; background: #E9ECF4; border-radius: 999px; overflow: hidden; margin: 14px 0 6px; }
+  .bar > div { height: 100%; background: var(--brand); border-radius: 999px; }
+  .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+
+  /* ---------- buttons ---------- */
+  .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .btn { min-height: 46px; padding: 10px 14px; border-radius: var(--radius); border: 1.5px solid var(--line); background: #fff; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .btn.primary:active { background: var(--brand-dark); }
+  .btn.outline { border-color: var(--brand); color: var(--brand-dark); }
+  .btn.text { border-color: transparent; background: transparent; color: var(--muted); font-weight: 500; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .adjust { margin-top: 12px; padding: 14px; background: var(--bg); border-radius: var(--radius); display: none; }
+  .adjust.open { display: block; }
+  input[type=range] { width: 100%; accent-color: var(--brand); margin: 10px 0; }
+  .note { font-size: 12.5px; color: var(--muted); margin: 6px 0; }
+  .planned { margin-top: 10px; font-size: 13px; color: var(--success); font-weight: 600; }
+
+  /* ---------- how we checked this ---------- */
+  details { margin-top: 4px; }
+  summary { cursor: pointer; font-weight: 600; color: var(--brand-dark); font-size: 15px; list-style: none; min-height: 44px; display: flex; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; margin-right: 8px; }
+  details[open] summary::before { content: "▾"; }
+  h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 16px 0 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+  td, th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tx { max-height: 240px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--line); border-radius: 8px; }
+  .tx td { padding: 5px 4px; font-size: 11.5px; }
+  mark.bad { background: var(--audit-red-soft); color: var(--audit-red); font-weight: 700; padding: 0 2px; border-radius: 3px; }
+  .blocked { text-decoration: line-through; color: var(--muted); font-size: 14px; margin: 4px 0; }
+  .check { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; gap: 8px; }
+  .check small { display: block; color: var(--muted); font-size: 11.5px; }
+  .leak-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .leak-item .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .leak-item .name { font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .leak-item .amt { font-size: 14.5px; font-weight: 600; white-space: nowrap; flex: none; }
+  .leak-item .note { margin: 3px 0 10px; }
+  .leak-actions { display: flex; gap: 8px; }
+  .leak-btn { flex: 1; min-width: 0; width: auto; white-space: nowrap; font-size: 12.5px; padding: 10px 4px; }
+  .leak-q { flex: 0 0 46px; width: 46px; min-height: 46px; padding: 0; border-radius: 50%; font-size: 18px; font-weight: 700; line-height: 1; }
+  .info-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--brand); background: #fff; color: var(--brand-dark); font: italic 700 13px Georgia, serif; line-height: 1; cursor: pointer; margin-left: 8px; vertical-align: middle; padding: 0; }
+  .info-btn.on { background: var(--brand); color: #fff; }
+  .how-panel { display: none; margin: 10px 0 4px; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+  .how-panel.open { display: block; }
+  .how-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+  .how-close { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; width: 32px; height: 32px; }
+  .path-legend { margin: 8px 0 6px; }
+  .path-legend p { font-size: 13px; color: var(--muted); margin: 3px 0; display: flex; align-items: center; gap: 8px; }
+  .path-legend .sw { flex: none; }
+  .leak-tip { font-size: 13.5px; line-height: 1.45; background: var(--success-soft); color: #1f5e3f; border-radius: 10px; padding: 10px 12px; margin: 4px 0 8px; }
+  .leak-noted { font-size: 13px; font-weight: 600; color: var(--success); margin: 0; }
+  .leak-summary { padding: 6px 0 2px; }
+  .leak-summary p { font-size: 13px; margin: 4px 0; }
+  .checksum { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0 4px; }
+  .checksum p { font-size: 13.5px; line-height: 1.4; }
+  .chk-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .chk-icon { flex: none; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .chk-icon.ok { background: var(--success-soft); color: var(--success); }
+  .chk-icon.bad { background: var(--audit-red-soft); color: var(--audit-red); }
+  .chk-num { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chk-label { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .sub-summary { font-size: 14px; min-height: 40px; }
+  details.sub { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+  details.sub summary::before { margin-right: 6px; }
+  .cmp-card { background: var(--bg); border-radius: 10px; padding: 12px 14px; margin: 8px 0; }
+  .cmp-card .cmp-item { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+  .cmp-card .cmp-line { font-size: 13px; color: var(--muted); margin: 2px 0; }
+  .tx-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .tx-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .tx-top .tx-amt { font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  .tx-id { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .handoff { border-left: 4px solid var(--attention); }
+  .contact { background: var(--bg); border-radius: var(--radius); padding: 12px; font-size: 14px; margin-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }
+  .chip { border: 1px solid var(--brand); color: var(--brand-dark); background: var(--brand-soft); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; min-height: 32px; }
+  .qa-log { max-height: 260px; overflow-y: auto; overflow-x: hidden; margin: 4px 0 10px; }
+  .qa { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .qa-q { font-weight: 600; font-size: 13.5px; margin: 0 0 6px; color: var(--muted); }
+  .qa-q::before { content: "You: "; font-weight: 700; color: var(--text); }
+  .qa-a { font-size: 14.5px; line-height: 1.45; margin: 0 0 6px; }
+  .ask-row { display: flex; gap: 8px; align-items: center; }
+  .ask-row input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line); font-size: 14px; min-height: 44px; }
+  .loading { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
+  .toast { position: absolute; left: 20px; right: 20px; top: 40px; background: #fff; color: var(--text); padding: 12px 14px; border-radius: var(--radius); font-size: 13.5px; opacity: 0; transform: translateY(-16px); transition: opacity .3s, transform .3s; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,.2); border: 1px solid var(--line); display: flex; gap: 10px; align-items: flex-start; z-index: 5; }
+  .toast .avatar { width: 30px; height: 30px; font-size: 15px; }
+  .toast.show { opacity: 1; transform: none; }
+  .toast b { display: block; font-size: 12px; color: var(--brand); margin-bottom: 2px; }
+  .notif { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .tabbar { flex: none; display: flex; border-top: 1px solid var(--line); background: #fff; padding-bottom: 4px; }
+  .tabitem { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 6px; border: 0; background: none; color: var(--muted); font-size: 10.5px; cursor: default; min-height: 44px; }
+  .tabitem svg { width: 22px; height: 22px; }
+  .tabitem:not(:disabled) { cursor: pointer; }
+  .tabitem:disabled { opacity: .4; }
+  .set-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .set-row.off { color: #A3A9B5; }
+  .set-row .chev { font-size: 20px; line-height: 1; }
+  .set-toggle { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 6px 0 10px; font-size: 15px; line-height: 1.4; cursor: pointer; }
+  .switch { appearance: none; -webkit-appearance: none; flex: none; width: 48px; height: 28px; border-radius: 14px; background: #C9CFDD; position: relative; cursor: pointer; transition: background .2s; border: 0; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .switch:checked { background: var(--brand); }
+  .switch:checked::after { left: 23px; }
+  .auto-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .auto-actions .btn { flex: 1; width: auto; min-height: 42px; font-size: 13.5px; padding: 8px 6px; white-space: nowrap; }
+  .dep-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .dep-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+  .dep-top .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .dep-row .note { margin: 4px 0 0; }
+  .tabitem.on { color: var(--brand); font-weight: 600; }
+  .notif .when { font-size: 11.5px; color: var(--muted); }
+
+  /* ---------- presenter panel (outside the phone) ---------- */
+  .presenter { width: 290px; max-width: 100%; background: #fff; border-radius: var(--radius); padding: 16px; border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.12); font-size: 13px; }
+  .presenter h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 12px; }
+  .presenter label.field { display: block; font-weight: 600; margin: 12px 0 4px; }
+  .presenter select { width: 100%; max-width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 13px; }
+  .presenter .toggle { display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer; }
+  .presenter .toggle input { transform: scale(1.2); accent-color: var(--brand); }
+  .presenter .btn { min-height: 40px; font-size: 13px; margin-top: 8px; }
+  .p-alert { display: none; margin-top: 10px; padding: 8px 10px; background: var(--attention-soft); color: #7A5300; border-radius: 8px; font-size: 12px; line-height: 1.4; }
+  .p-alert.show { display: block; }
+  .p-alert p { margin: 3px 0; }
+  .presenter .meta { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+  .seg button { flex: 1; border: 0; background: #fff; padding: 9px 4px; font-size: 13px; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: var(--brand); color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="appbar">
+      <div>
+        <p class="title">Savings Coach</p>
+        <p class="pilot">Built for a Gesa Credit Union pilot</p>
+      </div>
+      <button class="bell" id="bell" aria-label="Notifications" onclick="show('notifications')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="count" id="bellCount">0</span>
+      </button>
+    </div>
+    <main id="main"><div class="loading">Loading…</div></main>
+    <div class="toast" id="toast"><div class="avatar">P</div><div><b id="toastTitle"></b><span id="toastText"></span></div></div>
+    <nav class="tabbar">
+      <button class="tabitem" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Accounts</span></button>
+      <button class="tabitem" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-4-4M17 17H4l4 4"/></svg><span>Transfer</span></button>
+      <button class="tabitem on" id="tabbar-coach" aria-current="true" onclick="show('coach')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 2.5 4.5 6.5 4.5c2 0 3.5 1.2 5.5 3.5 2-2.3 3.5-3.5 5.5-3.5 4 0 6 4 3.5 8-2.5 4.15-9.5 8.5-9.5 8.5z"/></svg><span>Coach</span></button>
+      <button class="tabitem" id="tabbar-goals" onclick="show('goals')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg><span>Goals</span></button>
+      <button class="tabitem" id="tabbar-settings" onclick="show('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
+    </nav>
+  </div>
+
+  <aside class="presenter">
+    <h2>Presenter panel</h2>
+    <label class="field" for="member">Member</label>
+    <select id="member"></select>
+    <label class="field">Screen</label>
+    <div class="seg">
+      <button id="tab-coach" class="on" onclick="show('coach')">Penny</button>
+      <button id="tab-notifications" onclick="show('notifications')">Inbox</button>
+      <button id="tab-data" onclick="show('data')">Data</button>
+    </div>
+    <label class="field">Replay</label>
+    <div class="seg">
+      <button id="start-jun" class="on" onclick="resetReplay('2026-06-01')">Start Jun 1</button>
+      <button id="start-sep" onclick="resetReplay('2026-09-01')">Sep 1 (end)</button>
+    </div>
+    <button class="btn primary" id="advance" onclick="advance()">Advance to next payday</button>
+    <p class="meta">As of <b id="asOf">…</b> · next payday <span id="nextPay">…</span></p>
+    <label class="field">Demo</label>
+    <label class="toggle"><input type="checkbox" id="corrupt"> Corrupt one number in Penny's message</label>
+    <button class="btn outline" id="resetDemoBtn" onclick="resetDemo()" style="margin-top:10px">Reset demo</button>
+    <div class="p-alert" id="presenterAlert"></div>
+    <p class="meta">Clears every member's plans and check-ins, and returns to MBR-0026 on June 1.</p>
+    <p class="meta">Synthetic data only. No real money moves.</p>
+  </aside>
+</div>
+
+<script>
+const state = { member: 'MBR-0026', corrupt: false, screen: 'coach', rec: null, quality: null, replay: null, chat: [], leaksDismissed: new Set(), leaksNoted: new Set(), reward: null, alerts: {} };
+const ASK_CHIPS = ["Why this amount?", "What if I can't save this week?", "How did you figure this out?", "Talk to a person"];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = (n) => n == null ? '—' : (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (x) => Math.round(x * 100) + '%';
+const STATUS = { pass: 'pass', warn: 'needs attention', fail: 'fail' };
+const OUTCOME = { full: ['Saved in full', 'ok'], partial: ['Saved part of it', ''], none: ['No savings last time', 'muted'], skipped: ['Skipped last time', 'muted'] };
+const VALIDATED_BADGE = '<span class="badge">Verified against your account</span>';
+
+// Presenter-only: when the validator blocks a message and the template is shown instead,
+// say so in the presenter panel. The phone never shows a difference.
+function blockedNote(label, msg, validator, expected) {
+  if (!msg || msg.source !== 'template' || !msg.ai_message || !validator) return null;
+  const bad = (validator.blocked || [])[0];
+  if (!bad) return null;
+  return `Blocked (${label}): AI wrote ${bad.text}` + (expected != null ? `, expected ${money(expected)}` : `, which isn't one of Penny's numbers`) + '. Showing the template instead.';
+}
+function updatePresenterAlerts() {
+  const a = state.alerts;
+  a.rec = blockedNote('recommendation', state.rec?.message, state.rec?.validator, state.rec?.amount);
+  a.leaks = blockedNote('found money', state.leaks?.message, state.leaks?.validator, state.leaks?.total_monthly);
+  const lines = Object.values(a).filter(Boolean);
+  const el = $('presenterAlert');
+  el.innerHTML = lines.map(l => `<p>${esc(l)}</p>`).join('');
+  el.classList.toggle('show', lines.length > 0);
+}
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const plainDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${MONTHS[m - 1]} ${d}`; };
+const monthName = (iso) => MONTHS[Number(iso.split('-')[1]) - 1];
+const yearOf = (iso) => iso.split('-')[0];
+const countWord = (n) => n === 0 ? '' : n === 1 ? 'The number' : n === 2 ? 'Both numbers' : `All ${n} numbers`;
+const FACT_LABELS = {
+  safe_per_paycheck: 'Safe to save this payday', offer_amount: 'Amount offered', goal_target: 'Your goal',
+  goal_saved: 'Saved so far', goal_remaining: 'Left to go', planned_amount: 'What you planned',
+  saved_amount: 'What you saved', leaks_total_monthly: 'Money found', fees_monthly: 'Fees found',
+  duplicates_monthly: 'Possible duplicates found',
+};
+const incomeBasisPlain = (basis) => basis && basis.startsWith('lowest month')
+  ? 'your lowest month, since your pay is irregular' : 'the average of the 3 months';
+
+function toast(title, text) {
+  const t = $('toast'); $('toastTitle').textContent = title; $('toastText').textContent = text; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 5000);
+}
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (r.status === 404 && path.startsWith('/api/')) {
+    throw new Error(`This server is running old code (it has no ${path.split('?')[0]}). Restart the app, or open http://localhost:8001.`);
+  }
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+  return r.json();
+}
+const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const pennyHeader = () => `
+  <div class="penny">
+    <div class="avatar" aria-hidden="true"><img alt="" src="" onerror="this.style.display='none'"><span>P</span></div>
+    <div><p class="name">Penny</p><p class="ai">Penny is an AI assistant.</p></div>
+  </div>`;
+
+// ---------------------------------------------------------------- presenter
+function setReplay(rp) {
+  state.replay = rp;
+  $('asOf').textContent = rp.as_of;
+  $('nextPay').textContent = rp.next_payday || 'end of data';
+  $('advance').disabled = !rp.can_advance;
+  $('start-jun').classList.toggle('on', rp.start === '2026-06-01');
+  $('start-sep').classList.toggle('on', rp.start === '2026-09-01');
+  const c = $('bellCount'); c.textContent = rp.unread; c.classList.toggle('show', rp.unread > 0);
+  $('bell').classList.toggle('on', rp.unread > 0);
+}
+async function loadMembers() {
+  const d = await api('/api/members');
+  state.member = d.default;
+  $('member').innerHTML = d.members.map(m =>
+    `<option value="${m.member_id}" ${m.member_id === d.default ? 'selected' : ''}>${esc(m.member_id)} · ${esc(m.pay_cycle)} · ${esc(m.goal_type)}</option>`).join('');
+}
+async function resetReplay(start) {
+  state.chat = []; state.alerts.chat = null; state.alerts.checkin = null;
+  state.leaksDismissed = new Set(); state.leaksNoted = new Set();
+  clearTimeout(state._rewardTimer); state.reward = null;
+  setReplay(await post('/api/replay/reset', { member_id: state.member, start }));
+  show('coach');
+}
+async function advance() {
+  $('advance').disabled = true;
+  try {
+    const d = await post('/api/replay/advance', { member_id: state.member, corrupt: state.corrupt });
+    state.chat = []; state.alerts.chat = null; state.alerts.checkin = null;
+    state.leaksDismissed = new Set(); state.leaksNoted = new Set();
+    clearTimeout(state._rewardTimer); state.reward = null;
+    setReplay(d.state);
+    state.alerts.checkin = blockedNote('check-in', d.checkin, d.checkin.validator, ['full', 'partial'].includes(d.checkin.outcome) ? d.checkin.saved_amount : d.checkin.next_offer);
+    updatePresenterAlerts();
+    if (d.auto_note) toast(d.auto_note.kind === 'auto_paused' ? 'Auto-contribute paused' : 'Auto-contribute', d.auto_note.message);
+    else toast('Penny checked in', d.checkin.message);
+    show(state.screen === 'goals' ? 'goals' : 'coach');
+  } catch (e) { $('advance').disabled = false; alert(e.message); }
+}
+async function resetDemo() {
+  const btn = $('resetDemoBtn');
+  btn.disabled = true;
+  try {
+    await api('/api/quality?force=true');  // clears every member's replay, plans, and check-ins
+    state.member = 'MBR-0026';
+    $('member').value = state.member;
+    state.corrupt = false;
+    $('corrupt').checked = false;
+    state.chat = []; state.alerts.chat = null; state.alerts.checkin = null;
+    state.leaksDismissed = new Set(); state.leaksNoted = new Set();
+    clearTimeout(state._rewardTimer); state.reward = null;
+    setReplay(await post('/api/replay/reset', { member_id: state.member, start: '2026-06-01' }));
+    show('coach');
+    toast('Demo reset', 'Back to MBR-0026, starting June 1.');
+  } catch (e) { toast('Could not reset', e.message); } finally { btn.disabled = false; }
+}
+
+// ---------------------------------------------------------------- coach screen
+async function loadRecommendation() {
+  $('main').innerHTML = '<div class="loading">Penny is checking the numbers…</div>';
+  try {
+    const [rec, leaks, path] = await Promise.all([
+      api(`/api/recommendation?member_id=${state.member}&corrupt=${state.corrupt}`),
+      api(`/api/leaks?member_id=${state.member}&corrupt=${state.corrupt}`).catch(() => null),
+      api(`/api/goal-path?member_id=${state.member}`).catch(() => null),
+    ]);
+    state.rec = rec; state.leaks = leaks; state.path = path;
+    setReplay(state.rec.replay || state.replay);
+    renderCoach();
+  } catch (e) {
+    if (state.screen === 'coach') $('main').innerHTML = `<div class="card"><b>Could not load.</b><p class="note">${esc(e.message)}</p></div>`;
+  }
+}
+const monthYear = (iso) => { const [y, m] = iso.split('-').map(Number); return `${MONTHS[m - 1].slice(0, 3)} ${y}`; };
+const moneyShort = (n) => '$' + Math.round(n).toLocaleString('en-US');
+// One place for the chart colors and line styles: the chart and its legend both read these,
+// so a legend swatch can never drift from the element it describes.
+const PATH = {
+  actual: { color: '#4356FF', width: 3, dash: '' },        // solid, brand blue: "So far"
+  projected: { color: '#8C97FF', width: 2.5, dash: '6 5' },  // dashed, lighter blue: "Projected at safe pace"
+  target: { color: '#B7791F', width: 2, dash: '' },        // amber vertical marker: the target date, nothing else
+};
+const pathStroke = (s) => `stroke="${s.color}" stroke-width="${s.width}"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}`;
+function goalPathCard() {
+  const p = state.path;
+  if (!p || !p.series || p.series.length < 2) return '';
+  const W = 306, H = 168, L = 46, R = 10, T = 12, B = 26;
+  const pw = W - L - R, ph = H - T - B;
+  const ms = (iso) => Date.parse(iso);
+  const actual = p.actual || [];
+  const todayIso = p.series[0].date;
+  const done = p.remaining <= 0;
+  const projected = (!done && p.months_to_goal != null);
+  // x-axis runs from the first "so far" point (or today) to the end of the projection
+  const xmin = Math.min(ms(todayIso), actual.length ? ms(actual[0].date) : Infinity);
+  const lastProj = p.series[p.series.length - 1].date;
+  let xmax = ms(lastProj);
+  const targetMs = p.target_date ? ms(p.target_date) : null;
+  const targetInView = targetMs != null && targetMs >= xmin && targetMs <= xmax;
+  const x = (iso) => L + (pw * (ms(iso) - xmin)) / Math.max(1, xmax - xmin);
+  const y = (amt) => T + ph - (ph * Math.min(amt, p.target)) / p.target;
+  const pt = (s) => `${x(s.date).toFixed(1)},${y(s.amount).toFixed(1)}`;
+
+  const soFarLine = actual.length >= 2
+    ? `<polyline points="${actual.map(pt).join(' ')}" fill="none" ${pathStroke(PATH.actual)} stroke-linejoin="round" stroke-linecap="round"/>` : '';
+  const projLine = projected
+    ? `<polyline points="${p.series.map(pt).join(' ')}" fill="none" ${pathStroke(PATH.projected)} stroke-linecap="round"/>` : '';
+  const targetLine = targetInView
+    ? `<line x1="${x(p.target_date).toFixed(1)}" y1="${T}" x2="${x(p.target_date).toFixed(1)}" y2="${T + ph}" ${pathStroke(PATH.target)}/>` : '';
+  const todayDot = `<circle cx="${x(todayIso).toFixed(1)}" cy="${y(p.series[0].amount)}" r="5" fill="${PATH.actual.color}" stroke="#fff" stroke-width="2"/>`;
+  const svg = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Chart of your savings so far and where your safe pace leads" style="display:block;max-width:100%">
+      <line x1="${L}" y1="${T}" x2="${W - R}" y2="${T}" stroke="#C9CFDD" stroke-dasharray="2 4"/>
+      <line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="#C9CFDD"/>
+      <text x="${L - 6}" y="${T + 4}" text-anchor="end" font-size="11" fill="#5F6672">${moneyShort(p.target)}</text>
+      <text x="${L - 6}" y="${T + ph + 4}" text-anchor="end" font-size="11" fill="#5F6672">$0</text>
+      ${targetLine}${projLine}${soFarLine}${todayDot}
+      <text x="${L}" y="${H - 8}" font-size="11" fill="#5F6672">${monthYear(new Date(xmin).toISOString().slice(0, 10))}</text>
+      <text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="11" fill="#5F6672">${monthYear(new Date(xmax).toISOString().slice(0, 10))}</text>
+    </svg>`;
+
+  // Legend swatches are drawn from the same PATH styles as the chart
+  const sw = (inner) => `<svg class="sw" viewBox="0 0 24 12" width="24" height="12" aria-hidden="true">${inner}</svg>`;
+  const swSoFar = sw(`<line x1="1" y1="6" x2="23" y2="6" ${pathStroke(PATH.actual)} stroke-linecap="round"/><circle cx="12" cy="6" r="3.5" fill="${PATH.actual.color}"/>`);
+  const swProj = sw(`<line x1="1" y1="6" x2="23" y2="6" ${pathStroke(PATH.projected)} stroke-linecap="round"/>`);
+  const swTarget = sw(`<line x1="12" y1="0" x2="12" y2="12" ${pathStroke(PATH.target)}/>`);
+
+  let status, chip;
+  if (done) { status = 'You have reached this goal.'; chip = '<span class="badge pass">Goal reached</span>'; }
+  else if (p.months_to_goal == null) {
+    status = "There's no safe amount to add right now, so there's no projected date. Your progress so far is shown.";
+    chip = '<span class="badge muted">Progress only</span>';
+  } else if (p.on_pace) { status = `At your safe pace of ${money(p.monthly_pace)} a month, you'd reach it around ${monthYear(p.projected_date)}.`; chip = '<span class="badge pass">On pace for your date</span>'; }
+  else {
+    status = `At your safe pace of ${money(p.monthly_pace)} a month, you'd reach it around ${monthYear(p.projected_date)}.` +
+      (p.needed_monthly != null ? ` To hit your date, about ${money(p.needed_monthly)} a month would do it.` : '');
+    chip = '<span class="badge warn">A little past your date</span>';
+  }
+  return `
+    <div class="card">
+      ${pennyHeader()}
+      <p class="eyebrow">Your path to your ${esc(p.goal_type)}</p>
+      ${svg}
+      <div class="path-legend">
+        <p>${swSoFar}So far: ${money(p.saved)} of ${money(p.target)}</p>
+        ${projected ? `<p>${swProj}Projected at safe pace</p>` : ''}
+        ${targetInView ? `<p>${swTarget}Your target date: ${monthYear(p.target_date)}</p>` : ''}
+      </div>
+      <p class="msg" style="font-size:14.5px">${esc(status)}</p>
+      ${chip}
+      ${p.checkin_saved > 0 ? `<p class="note">Includes ${money(p.checkin_saved)} you've saved through Penny's check-ins.</p>` : ''}
+    </div>`;
+}
+function feeTip(merchant) {
+  const m = merchant.toLowerCase();
+  if (m.includes('overdraft')) return 'A low-balance alert can help you avoid this.';
+  if (m.includes('late')) return 'A payment reminder a few days ahead can help you avoid this.';
+  if (m.includes('service')) return 'Some accounts waive this with a minimum balance or direct deposit. Worth asking about.';
+  return 'Keeping a small cushion in your account can help you avoid fees like this.';
+}
+// Refresh the data behind the Coach screen without a loading screen, and keep
+// the scroll position so tapping a button never jumps the page.
+async function refreshCoachQuietly() {
+  const main = $('main');
+  const top = main.scrollTop;
+  const [rec, leaks, path] = await Promise.all([
+    api(`/api/recommendation?member_id=${state.member}&corrupt=${state.corrupt}`),
+    api(`/api/leaks?member_id=${state.member}&corrupt=${state.corrupt}`).catch(() => null),
+    api(`/api/goal-path?member_id=${state.member}`).catch(() => null),
+  ]);
+  state.rec = rec; state.leaks = leaks; state.path = path;
+  setReplay(state.rec.replay || state.replay);
+  renderCoach();
+  main.scrollTop = top;
+}
+async function actOnLeak(itemId, confirm) {
+  const item = (state.leaks?.items || []).find(i => i.id === itemId);
+  if (!item) return;
+  try {
+    await post('/api/leaks/confirm', { member_id: state.member, item_id: itemId, confirmed: confirm });
+    if (confirm && item.kind === 'fee') {
+      state.leaksNoted.add(itemId);  // the tip shows inline under the item, no toast
+    } else if (confirm) {
+      const goal = state.rec?.goal?.type || 'your goal';
+      toast('Subscription canceled', state.leaks?.room
+        ? `${money(item.monthly_amount)} a month freed up, once the charge stops.`
+        : `+${money(item.monthly_amount)} a month toward your ${goal}, once the charge stops.`);
+    } else {
+      state.leaksDismissed.add(itemId);
+      toast(item.kind === 'duplicate' ? 'Kept' : 'Dismissed',
+        item.kind === 'duplicate' ? 'No problem, keeping both charges.' : 'No problem, left as is.');
+    }
+    await refreshCoachQuietly();
+  } catch (e) { toast('Could not save', e.message); }
+}
+function leaksCard() {
+  const l = state.leaks;
+  if (!l || !l.items.length) return '';
+  const m = l.message, v = l.validator;
+  const srcBadge = VALIDATED_BADGE;
+  if (l.handoff) {
+    const rows = l.items.map(i => `
+      <div class="check"><span>${esc(i.merchant)} · ${money(i.monthly_amount)}/mo<small>${esc(i.note)}</small></span></div>`).join('');
+    return `
+      <div class="card soft">
+        ${pennyHeader()}
+        <p class="eyebrow">Ways to free up money while you talk to a counselor</p>
+        <p class="hero" style="font-size:32px">${money(l.total_monthly)}<span class="sub" style="display:inline"> a month</span></p>
+        <p class="msg">${esc(m.text)}</p>
+        ${srcBadge}
+        ${rows}
+        <p class="note">Just information for now, no amount to save and nothing to accept. Your counselor can help you decide what to do with these.</p>
+      </div>`;
+  }
+  const LABELS = {
+    duplicate: { act: 'Cancel subscription', skip: 'Keep it' },
+    fee: { act: '?', skip: 'Dismiss' },
+  };
+  const noted = (i) => i.kind === 'fee' && state.leaksNoted.has(i.id) && i.confirmed;
+  const active = l.items.filter(i => noted(i) || (!i.confirmed && !state.leaksDismissed.has(i.id)));
+  const done = l.items.filter(i => !noted(i) && (i.confirmed || state.leaksDismissed.has(i.id)));
+
+  const summaryLines = [];
+  for (const i of done.filter(i => i.confirmed)) {
+    const verb = i.kind === 'duplicate' ? 'Canceled' : 'Avoiding';
+    summaryLines.push(`${verb}: ${esc(i.merchant)}, ${money(i.monthly_amount)} a month`);
+  }
+  const kept = done.filter(i => !i.confirmed && i.kind === 'duplicate').length;
+  const dismissed = done.filter(i => !i.confirmed && i.kind === 'fee').length;
+  if (kept) summaryLines.push(`Kept: ${kept} item${kept === 1 ? '' : 's'}`);
+  if (dismissed) summaryLines.push(`Dismissed: ${dismissed} item${dismissed === 1 ? '' : 's'}`);
+  const summaryBlock = summaryLines.length
+    ? `<div class="leak-summary">${summaryLines.map(s => `<p>${esc(s)}</p>`).join('')}</div>` : '';
+
+  if (!active.length) {
+    return `
+      <div class="card soft">
+        ${pennyHeader()}
+        <p class="eyebrow">Found money</p>
+        <p class="msg">All handled for now. Penny will look again next time.</p>
+        ${summaryBlock}
+      </div>`;
+  }
+
+  const activeRows = active.map(i => {
+    const lb = LABELS[i.kind];
+    if (noted(i)) {
+      return `
+      <div class="leak-item">
+        <div class="top"><span class="name">${esc(i.merchant)}</span><span class="amt">${money(i.monthly_amount)}/mo</span></div>
+        <p class="note">${esc(i.note)}</p>
+        <p class="leak-tip">${esc(feeTip(i.merchant))}</p>
+        <p class="leak-noted">Noted</p>
+      </div>`;
+    }
+    return `
+      <div class="leak-item">
+        <div class="top"><span class="name">${esc(i.merchant)}</span><span class="amt">${money(i.monthly_amount)}/mo</span></div>
+        <p class="note">${esc(i.note)}</p>
+        <div class="leak-actions">
+          ${i.kind === 'fee'
+            ? `<button class="btn primary leak-btn leak-q" aria-label="Show a tip for avoiding this fee" title="Tip" onclick="actOnLeak('${esc(i.id)}', true)">?</button>`
+            : `<button class="btn primary leak-btn" onclick="actOnLeak('${esc(i.id)}', true)">${lb.act}</button>`}
+          <button class="btn text leak-btn" onclick="actOnLeak('${esc(i.id)}', false)">${lb.skip}</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card soft">
+      ${pennyHeader()}
+      <p class="eyebrow">${l.room ? 'Ways to find extra room' : 'Found money'}</p>
+      <p class="hero" style="font-size:32px">${money(l.total_monthly)}<span class="sub" style="display:inline"> a month</span></p>
+      <p class="msg">${esc(m.text)}</p>
+      ${srcBadge}
+      ${activeRows}
+      ${summaryBlock}
+      ${(l.confirmed_monthly > 0 && !l.room) ? `<p class="planned">+${money(l.confirmed_monthly)}/mo if you follow through, added to your next payday's amount until then.</p>` : ''}
+      ${(l.confirmed_monthly > 0 && l.room) ? `<p class="planned">${money(l.confirmed_monthly)}/mo freed up if you follow through.</p>` : ''}
+      <p class="note">${l.room ? "These are signals from your recent spending, not mistakes. Freeing up money here helps close the gap before anything is set aside." : "These are signals from your recent spending, not mistakes. Nothing is added until you say you'll act on it."}</p>
+    </div>`;
+}
+function highlightBlocked(text, validator) {
+  let html = esc(text);
+  for (const c of (validator?.checks || [])) {
+    if (!c.passed) html = html.replace(esc(c.text), `<mark class="bad">${esc(c.text)}</mark>`);
+  }
+  return html;
+}
+function lastCheckinCard() {
+  const h = state.replay?.history || [];
+  if (!h.length) return '';
+  const c = h[h.length - 1];
+  const [label, cls] = OUTCOME[c.outcome];
+  return `
+    <div class="card soft">
+      ${pennyHeader()}
+      <p class="eyebrow">Payday ${esc(c.payday_date)} · since ${esc(c.period_start)}</p>
+      <p class="msg">${esc(c.message)}</p>
+      <span class="badge ${cls}">${label}</span> ${VALIDATED_BADGE}
+    </div>`;
+}
+function historyCard() {
+  const h = state.replay?.history || [];
+  if (!h.length) return '';
+  const total = h.reduce((s, c) => s + c.saved_amount, 0);
+  return `
+    <div class="card">
+      <p class="eyebrow">Your paydays</p>
+      <table>
+        <colgroup><col style="width:24%"><col style="width:24%"><col style="width:24%"><col style="width:28%"></colgroup>
+        <tr><th>Payday</th><th class="num">Planned</th><th class="num">Saved</th><th></th></tr>
+        ${[...h].reverse().map(c => `<tr><td>${esc(c.payday_date.slice(5))}</td><td class="num">${money(c.planned_amount)}</td><td class="num">${money(c.saved_amount)}</td><td><span class="badge ${OUTCOME[c.outcome][1]}">${OUTCOME[c.outcome][0]}</span></td></tr>`).join('')}
+      </table>
+      <p class="planned">${money(total)} saved over ${h.length} payday${h.length === 1 ? '' : 's'}</p>
+      <p class="note">Saved = the smaller of what you planned and what was actually left over that period.</p>
+    </div>`;
+}
+
+function renderCoach() {
+  if (state.screen !== 'coach') return;  // a late Coach response must never paint over another tab
+  const r = state.rec;
+  if (!r.gate_passed) {
+    $('main').innerHTML = `<div class="card">${pennyHeader()}<p class="msg">I can't make a suggestion yet. The data check found a structural problem.</p>
+      <ul class="note">${r.gate_failures.map(c => `<li>${esc(c.name)} (${c.count})</li>`).join('')}</ul></div>`;
+    return;
+  }
+  const g = r.goal, m = r.message, v = r.validator, f = r.facts;
+  const srcBadge = VALIDATED_BADGE;  // AI message or fallback template: the member sees no difference
+  updatePresenterAlerts();
+  const howBtn = `<button class="info-btn ${state.howOpen ? 'on' : ''}" onclick="toggleHow()" aria-label="How this was calculated" aria-expanded="${state.howOpen ? 'true' : 'false'}">i</button>`;
+  const planned = r.replay?.planned_amount;
+  const plannedLine = planned > 0 ? `<p class="planned">Planned: move ${money(planned)} this payday.</p>` : '';
+  let top;
+  if (r.handoff.needed) {
+    top = `
+      <div class="card handoff">
+        ${pennyHeader()}
+        <p class="eyebrow">Let's get you a real person</p>
+        <p class="msg">${esc(m.text)}</p>
+        ${srcBadge}${howBtn}%%HOWPANEL%%
+        <div class="contact"><b>Free financial counselor</b><br>Call 888-946-4372 (demo number) or ask at any branch.<br><span class="note">A real person will help. No savings push right now.</span></div>
+        <div class="actions">
+          <button class="btn primary" onclick="toast('Counselor requested', 'A counselor will reach out (demo).')">Ask a counselor to call me</button>
+          <button class="btn text" onclick="decide('not_now')">Not now</button>
+        </div>
+      </div>`;
+  } else if (r.room?.needed) {
+    top = `
+      <div class="card">
+        ${pennyHeader()}
+        <p class="eyebrow">Let's find some extra room</p>
+        <p class="msg">${esc(r.room.message)}</p>
+        <p class="note">A few ways to free up money are just below.</p>
+      </div>`;
+  } else {
+    // The card never disappears. After a save, the buttons are replaced by a
+    // confirmation (a reward line for a couple of seconds, then the plain plan line).
+    const rewardLine = state.reward
+      ? `<p class="msg" style="font-size:17px;font-weight:700;color:var(--success)">Nice — ${money(state.reward.amount)} is set to move to your ${esc(state.reward.goal)}.</p>`
+      : plannedLine;
+    const actionsHtml = planned > 0
+      ? `${rewardLine}
+        ${r.replay?.auto_note ? `<p class="note">Moved automatically. Demo: change or cancel works right away (in real use you'd have ${r.replay.auto_note.window_hours} hour).</p>` : ''}
+        <div class="actions">
+          <button class="btn outline" onclick="toggleAdjust()">Change the amount</button>
+          ${r.replay?.auto_note ? `<button class="btn text" onclick="cancelAuto(${r.replay.auto_note.id})">Cancel</button>` : ''}
+        </div>`
+      : `<div class="actions">
+          <button class="btn primary" onclick="decide('accept')">Save ${money(r.amount)}</button>
+          <button class="btn outline" onclick="toggleAdjust()">Change the amount</button>
+          <button class="btn text" onclick="decide('not_now')">Not now</button>
+        </div>`;
+    top = `
+      <div class="card">
+        ${pennyHeader()}
+        <p class="eyebrow">This payday you can safely move</p>
+        <p class="hero">${money(r.amount)}</p>
+        <p class="sub">to your ${esc(g.type)}${r.smaller_step ? ' · a step you can really make' : ''}</p>
+        <p class="msg">${esc(m.text)}</p>
+        ${srcBadge}${howBtn}%%HOWPANEL%%
+        <div class="bar"><div style="width:${Math.min(100, g.progress * 100)}%"></div></div>
+        <div class="row"><span>${money(g.saved)} saved (${pct(g.progress)})</span><span>${money(g.remaining)} to go</span></div>
+        ${actionsHtml}
+        <div class="adjust" id="adjust">
+          <div class="row"><span>Move a different amount</span><b id="adjVal">${money(r.amount)}</b></div>
+          <input type="range" id="adjRange" min="0" max="${r.amount}" step="0.01" value="${r.amount}" oninput="$('adjVal').textContent = money(+this.value); $('adjBtn').textContent = 'Save ' + money(+this.value) + ' instead'; updateSooner(this.value);">
+          <p class="note" id="soonerLine"></p>
+          <button class="btn outline" id="adjBtn" onclick="decide('adjust', +$('adjRange').value)">Save ${money(r.amount)} instead</button>
+        </div>
+      </div>`;
+  }
+
+  const blockedAi = m.source === 'template' && m.ai_message
+    ? `<p class="note">Penny's first draft:</p>
+       <p class="blocked">${highlightBlocked(m.ai_message, v)}</p>`
+    : '';
+  const n = v.numbers_checked || 0;
+  const summaryBlock = v.passed
+    ? `<div class="checksum"><span class="badge pass">Checked</span><p>${n === 0
+        ? "This message doesn't state a number, so there's nothing to check."
+        : `Every number in Penny's message was checked against your account history. ${countWord(n)} matched.`}</p></div>`
+    : `<div class="checksum"><span class="badge tmpl">Pre-checked message</span><p>${m.ai_message
+        ? "Penny's first draft had a number we couldn't verify, so we showed a pre-checked message instead."
+        : "Penny couldn't reach her checker just now, so we showed a pre-checked message instead."}</p></div>`;
+  const checkRows = (v.checks || []).map(c => `
+    <div class="chk-row">
+      <span class="chk-icon ${c.passed ? 'ok' : 'bad'}">${c.passed ? '✓' : '✕'}</span>
+      <div><p class="chk-num">${esc(c.text)}</p><p class="chk-label">${c.passed ? 'Matches: ' + esc(FACT_LABELS[c.matched] || c.matched) : 'Not one of your numbers'}</p></div>
+    </div>`).join('');
+  const missingRow = v.required ? `
+    <div class="chk-row">
+      <span class="chk-icon ${v.missing_amount ? 'bad' : 'ok'}">${v.missing_amount ? '✕' : '✓'}</span>
+      <div><p class="chk-label">Your savings amount is in the message</p></div>
+    </div>` : '';
+
+  const numRow = (label, val, note) => `<tr><td>${label}${note ? `<br><span class="note">${note}</span>` : ''}</td><td class="num">${val}</td></tr>`;
+  const chainNote = [
+    `Split across about ${f.paychecks_per_month.toFixed(2)} paydays a month, capped at the ${money(f.goal_remaining)} still left on your goal, this payday's amount is ${money(f.safe_per_paycheck)}.`,
+    r.confirmed_leaks_monthly > 0 ? `Includes ${money(r.confirmed_leaks_monthly)}/mo of found money you're following through on, once it takes effect.` : '',
+    (r.amount !== r.safe_amount && r.confirmed_leaks_monthly <= 0) ? "It's lower than usual because a recent payday's saving didn't go as planned. It returns to normal next time." : '',
+  ].filter(Boolean).map(s => `<p class="note">${s}</p>`).join('');
+
+  const cmpVal = (c, v) => v == null ? 'no stored estimate' : (c.unit === 'money' ? money(v) : `${v} months`);
+  const comparisons = (r.comparisons || []).map(c => `
+    <div class="cmp-card">
+      <p class="cmp-item">${esc(c.item)}</p>
+      <p class="cmp-line">Our calculation: ${cmpVal(c, c.ours)}${c.ours_label ? ` (${esc(c.ours_label)})` : ''}</p>
+      <p class="cmp-line">Stored estimate: ${cmpVal(c, c.stored)}</p>
+      ${c.note ? `<p class="cmp-line">${esc(c.note)}</p>` : ''}
+      ${c.signal ? '<span class="badge warn">Worth a look</span>' : ''}
+    </div>`).join('');
+
+  const howPanel = `
+    <div class="how-panel ${state.howOpen ? 'open' : ''}" id="howPanel">
+      <div class="how-head"><b>How this was calculated</b><button class="how-close" onclick="toggleHow()" aria-label="Close">×</button></div>
+      <div>
+        ${summaryBlock}
+        ${blockedAi}
+        ${checkRows}${missingRow}
+
+        <details class="sub">
+          <summary class="sub-summary">The numbers</summary>
+          <p class="note">Based on ${monthName(f.window_start)} to ${monthName(f.window_end)} ${yearOf(f.window_end)}.</p>
+          <table>
+            <colgroup><col style="width:62%"><col style="width:38%"></colgroup>
+            ${numRow('Income per month', money(f.monthly_income), 'What typically comes in, ' + incomeBasisPlain(f.income_basis))}
+            ${numRow('Spending per month', money(f.monthly_outflow), 'What typically goes out')}
+            ${numRow('Debt minimum payments', money(f.debt_minimums), "Bills that don't show up as transactions")}
+            ${numRow('<b>Surplus</b>', '<b>' + money(f.surplus) + '</b>', "What's left after income, spending, and debt")}
+            ${numRow('Safety cushion', pct(f.buffer), 'Kept aside, never moved')}
+            ${numRow('<b>Safe per month</b>', '<b>' + money(f.safe_monthly) + '</b>', 'Surplus minus the cushion')}
+          </table>
+          ${chainNote}
+          <p class="note">Example starting balance: ${money(f.opening_balance)} (an assumption, not in your data).</p>
+          <h4>Month by month</h4>
+          <table>
+            <tr><th></th><th class="num">Income</th><th class="num">Spending</th></tr>
+            ${[0, 1, 2].map(i => `<tr><td>${MONTHS[(Number(f.window_start.split('-')[1]) - 1 + i) % 12]}</td><td class="num">${money(f.income_by_month[i])}</td><td class="num">${money(f.outflow_by_month[i])}</td></tr>`).join('')}
+          </table>
+          <p class="note">Why: ${esc(r.reason || 'no amount is safe to save right now')}.</p>
+        </details>
+
+        <details class="sub">
+          <summary class="sub-summary">Our calculation vs stored estimate</summary>
+          ${comparisons}
+          <p class="note">Stored values are shown for transparency. Only our calculation is used, and only our numbers reach Penny.</p>
+        </details>
+
+        <details class="sub">
+          <summary class="sub-summary">Source transactions (${r.transactions.length})</summary>
+          <div class="tx">
+            ${r.transactions.map(t => `
+              <div class="tx-row">
+                <div class="tx-top"><span>${esc(plainDate(t.date))} · ${esc(t.category)}${t.possible_duplicate ? ' <span class="badge warn">possible duplicate</span>' : ''}</span><span class="tx-amt">${money(t.amount)}</span></div>
+                <p class="tx-id">${esc(t.id)}</p>
+              </div>`).join('')}
+          </div>
+        </details>
+      </div>
+    </div>`;
+  top = top.replace('%%HOWPANEL%%', howPanel);
+  $('main').innerHTML = lastCheckinCard() + top + goalPathCard() + askCard() + leaksCard() + historyCard();
+  if (state.openAdjust) { $('adjust')?.classList.add('open'); state.openAdjust = false; }
+}
+
+let _soonerTimer, _soonerSeq = 0;
+// Live "sooner by" line under the Adjust slider. The math is the engine's; this only shows it.
+function updateSooner(v) {
+  clearTimeout(_soonerTimer);
+  const seq = ++_soonerSeq;
+  _soonerTimer = setTimeout(async () => {
+    let text = '';
+    try {
+      const d = await api(`/api/paydays-sooner?member_id=${state.member}&amount=${v}`);
+      if (d.sooner_by) {
+        text = `At ${money(d.full_amount)}, you'd reach your goal about ${d.sooner_by} payday${d.sooner_by === 1 ? '' : 's'} sooner than at ${money(d.chosen_amount)}.`;
+      }
+    } catch (e) { text = ''; }
+    const el = $('soonerLine');
+    if (el && seq === _soonerSeq) el.textContent = text;
+  }, 120);
+}
+function toggleAdjust() { $('adjust').classList.toggle('open'); }
+function toggleHow() {
+  state.howOpen = !state.howOpen;
+  $('howPanel')?.classList.toggle('open', state.howOpen);
+  document.querySelector('.info-btn')?.classList.toggle('on', state.howOpen);
+  document.querySelector('.info-btn')?.setAttribute('aria-expanded', state.howOpen ? 'true' : 'false');
+}
+
+// ---------------------------------------------------------------- ask penny
+function askCard() {
+  const chat = state.chat || [];
+  const bubbles = chat.map(c => {
+    if (c.pending) {
+      return `<div class="qa"><p class="qa-q">${esc(c.question)}</p><p class="qa-a loading" style="padding:4px 0;text-align:left">Penny is checking…</p></div>`;
+    }
+    const srcBadge = VALIDATED_BADGE;
+    return `
+      <div class="qa">
+        <p class="qa-q">${esc(c.question)}</p>
+        <p class="qa-a">${esc(c.answer)}</p>
+        ${srcBadge}
+        ${c.show_counselor ? `<div class="contact"><b>Free financial counselor</b><br>Call 888-946-4372 (demo number) or ask at any branch.</div>` : ''}
+      </div>`;
+  }).join('');
+  return `
+    <div class="card">
+      ${pennyHeader()}
+      <p class="eyebrow">Ask Penny</p>
+      <div class="chips">${ASK_CHIPS.map((q, i) => `<button class="chip" onclick="askChip(${i})">${esc(q)}</button>`).join('')}</div>
+      ${bubbles ? `<div class="qa-log">${bubbles}</div>` : ''}
+      <div class="ask-row">
+        <input type="text" id="askInput" placeholder="Ask a question…" onkeydown="if(event.key==='Enter'){askPennyFromInput()}">
+        <button class="btn primary" style="width:auto;padding:10px 16px" onclick="askPennyFromInput()">Send</button>
+      </div>
+    </div>`;
+}
+function askChip(i) { askPenny(ASK_CHIPS[i]); }
+function askPennyFromInput() {
+  const el = $('askInput');
+  const q = el.value;
+  el.value = '';
+  askPenny(q);
+}
+async function askPenny(question) {
+  if (!question || !question.trim()) return;
+  state.chat = state.chat || [];
+  const entry = { question, pending: true };
+  state.chat.push(entry);
+  renderCoach();
+  try {
+    const res = await post('/api/ask', { member_id: state.member, question, corrupt: state.corrupt });
+    Object.assign(entry, {
+      pending: false, answer: res.answer, source: res.source,
+      category: res.category, show_counselor: res.show_counselor, validator: res.validator,
+    });
+    state.alerts.chat = blockedNote('chat', res, res.validator, null);
+    updatePresenterAlerts();
+  } catch (e) {
+    Object.assign(entry, {
+      pending: false, source: 'template', show_counselor: false,
+      answer: 'Sorry, something went wrong. Try again, or tap the (i) on your recommendation.',
+    });
+  }
+  renderCoach();
+}
+
+function dismissReward() {
+  clearTimeout(state._rewardTimer);
+  state.reward = null;
+  renderCoach();
+}
+async function decide(action, amount) {
+  try {
+    const d = await post('/api/decision', { member_id: state.member, action, amount });
+    if (state.replay) { state.replay.planned_amount = d.planned_amount; }
+    if (state.rec?.replay) { state.rec.replay.planned_amount = d.planned_amount; }
+    if (action === 'not_now') {
+      state.reward = null;
+      renderCoach();
+    } else {
+      state.reward = { amount: d.planned_amount, goal: state.rec?.goal?.type || 'your goal' };
+      renderCoach();
+      clearTimeout(state._rewardTimer);
+      state._rewardTimer = setTimeout(dismissReward, 2600);
+    }
+  } catch (e) { toast('Could not save', e.message); }
+}
+
+// ---------------------------------------------------------------- notifications
+async function loadNotifications() {
+  const rp = await post('/api/replay/read', { member_id: state.member });
+  setReplay(rp);
+  if (state.screen !== 'notifications') return;
+  const h = [...rp.history].reverse();
+  const noteCards = [...(rp.notes || [])].reverse().map(n => `
+    <div class="notif">
+      <div class="penny" style="margin-bottom:4px"><div class="avatar" style="width:28px;height:28px;font-size:14px">P</div><div><p class="name" style="font-size:13px">Penny</p><p class="when">Payday ${esc(n.payday_date)}</p></div></div>
+      <p class="msg" style="font-size:14.5px">${esc(n.message)}</p>
+      ${n.status === 'active' ? `
+        <div class="auto-actions">
+          <button class="btn outline" onclick="changeAuto()">Change the amount</button>
+          <button class="btn text" onclick="cancelAuto(${n.id})">Cancel</button>
+        </div>
+        <p class="note">Demo: this works right away. In real use you'd have ${n.window_hours} hour.</p>`
+      : n.status === 'canceled' ? '<span class="badge muted">Canceled</span>'
+      : n.status === 'changed' ? '<span class="badge">Amount changed</span>'
+      : n.status === 'done' ? '<span class="badge ok">Done</span>' : ''}
+    </div>`).join('');
+  $('main').innerHTML = `
+    <div class="card">
+      <p class="eyebrow">Inbox</p>
+      ${noteCards}
+      ${(h.length || noteCards) ? '' : '<p class="note">No check-ins yet. Advance to the next payday to get one from Penny.</p>'}
+      ${h.map(c => `<div class="notif"><div class="penny" style="margin-bottom:4px"><div class="avatar" style="width:28px;height:28px;font-size:14px">P</div><div><p class="name" style="font-size:13px">Penny</p><p class="when">Payday ${esc(c.payday_date)}</p></div></div><p class="msg" style="font-size:14.5px">${esc(c.message)}</p><span class="badge ${OUTCOME[c.outcome][1]}">${OUTCOME[c.outcome][0]}</span></div>`).join('')}
+    </div>`;
+}
+
+// ---------------------------------------------------------------- data screen
+async function loadQuality(rebuild) {
+  $('main').innerHTML = '<div class="loading">' + (rebuild ? 'Rebuilding from the workbook…' : 'Loading…') + '</div>';
+  state.quality = await api('/api/quality' + (rebuild ? '?force=true' : ''));
+  if (rebuild) setReplay(await api(`/api/replay?member_id=${state.member}`));
+  if (state.screen === 'data') renderData();
+}
+function renderData() {
+  const q = state.quality;
+  const badge = (s) => `<span class="badge ${s}">${STATUS[s]}</span>`;
+  $('main').innerHTML = `
+    <div class="card">
+      <p class="eyebrow">Data import</p>
+      <b>${esc(q.source)}</b>
+      <p class="note">Loaded ${esc(q.loaded_at)} · ${q.counts.Members} members · ${q.counts.Transactions.toLocaleString()} transactions · ${q.counts.Debts} debts · ${q.counts.Goals} goals</p>
+      <p>Structural checks: ${q.gate_passed ? '<span class="badge pass">passed</span>' : '<span class="badge fail">failed</span>'}</p>
+      <p class="note">${esc(q.framing)}</p>
+      <button class="btn primary" onclick="loadQuality(true)">Rebuild from workbook</button>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Checks</p>
+      ${q.checks.map(c => `<div class="check"><span>${esc(c.name)}<small>${c.count} ${c.detail ? '· ' + esc(c.detail) : ''}</small></span>${badge(c.status)}</div>`).join('')}
+    </div>
+    <div class="card">
+      <p class="eyebrow">Assumptions</p>
+      ${q.assumptions.map(a => `<p class="note">${esc(a)}</p>`).join('')}
+      <p class="note">Synthetic data only. No real members, no real money movement.</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Portfolio check</p>
+      <p class="note">Runs the engine and hand-off rules across all members as of 2026-09-01.</p>
+      <button class="btn outline" onclick="loadPortfolio()">Run portfolio check</button>
+      <div id="portfolio"></div>
+    </div>`;
+}
+async function loadPortfolio() {
+  $('portfolio').innerHTML = '<p class="loading">Checking all members…</p>';
+  try {
+    const p = await api('/api/portfolio?as_of=2026-09-01');
+    $('portfolio').innerHTML = `
+      <h4>Recommendations (${p.member_count} members)</h4>
+      <div class="check"><span>Get a savings recommendation</span><span class="badge pass">${p.recommended_count}</span></div>
+      <div class="check"><span>Find extra room first</span><span class="badge muted">${p.find_room_count}</span></div>
+      <div class="check"><span>Handed to a counselor</span><span class="badge warn">${p.handoff_count}</span></div>
+      <table>
+        ${p.handoff_by_reason.map(r => `<tr><td>${esc(r.reason)}</td><td class="num">${r.count}</td></tr>`).join('')}
+      </table>
+      <h4>Signals a person should review</h4>
+      ${p.needs_attention.map(n => `<div class="check"><span>${esc(n.label)}<small>${esc(n.note)}</small></span><span class="badge warn">${n.count}</span></div>`).join('')}`;
+  } catch (e) { $('portfolio').innerHTML = `<p class="note">${esc(e.message)}</p>`; }
+}
+
+// ---------------------------------------------------------------- wiring
+// ---------------------------------------------------------------- settings screen
+async function loadSettings() {
+  $('main').innerHTML = '<div class="loading">Loading…</div>';
+  try {
+    const st = await api(`/api/settings?member_id=${state.member}`);
+    if (state.screen !== 'settings') return;
+    state.settings = st;
+    renderSettings();
+  } catch (e) {
+    if (state.screen === 'settings') $('main').innerHTML = `<div class="card"><b>Could not load.</b><p class="note">${esc(e.message)}</p></div>`;
+  }
+}
+function renderSettings() {
+  const grey = (label) => `<div class="set-row off" aria-disabled="true"><span>${label}</span><span class="chev">›</span></div>`;
+  $('main').innerHTML = `
+    <div class="card">
+      <p class="eyebrow">General</p>
+      ${grey('Notifications')}${grey('Linked accounts')}${grey('Security')}
+    </div>
+    <div class="card">
+      <p class="eyebrow">Goals</p>
+      <label class="set-toggle">
+        <span>Automatically contribute the suggested amount toward your goal.</span>
+        <input type="checkbox" class="switch" id="autoToggle" ${state.settings.auto_contribute ? 'checked' : ''} onchange="setAuto(this.checked)">
+      </label>
+      <p class="note">Penny will move the suggested amount automatically. You'll be notified and have 1 hour to change the amount or cancel.</p>
+      <p class="note">In this demo, changing or canceling works right away. One hour is the intended real-world window.</p>
+    </div>`;
+}
+async function setAuto(on) {
+  try {
+    state.settings = await post('/api/settings', { member_id: state.member, auto_contribute: on });
+  } catch (e) { toast('Could not save', e.message); if ($('autoToggle')) $('autoToggle').checked = !on; }
+}
+async function cancelAuto(noteId) {
+  try {
+    const d = await post('/api/auto/cancel', { member_id: state.member, note_id: noteId });
+    setReplay(d.state);
+    if (state.screen === 'notifications') loadNotifications(); else await refreshCoachQuietly();
+  } catch (e) { toast('Could not cancel', e.message); }
+}
+function changeAuto() {
+  state.openAdjust = true;
+  if (state.screen === 'coach') { $('adjust')?.classList.add('open'); state.openAdjust = false; }
+  else show('coach');
+}
+
+// ---------------------------------------------------------------- goals screen
+const DEP_OUTCOME = { pending: ['Planned', ''], full: ['Full', 'ok'], partial: ['Partial', ''], none: ['None', 'muted'], skipped: ['Skipped', 'muted'] };
+async function loadGoals() {
+  $('main').innerHTML = '<div class="loading">Loading your goal…</div>';
+  try {
+    const data = await api(`/api/goals?member_id=${state.member}`);
+    if (state.screen !== 'goals') return;
+    state.goals = data;
+    renderGoals();
+  } catch (e) {
+    if (state.screen === 'goals') $('main').innerHTML = `<div class="card"><b>Could not load.</b><p class="note">${esc(e.message)}</p></div>`;
+  }
+}
+function renderGoals() {
+  const { goal: g, deposits } = state.goals;
+  const goalCard = `
+    <div class="card">
+      <p class="eyebrow">Your goal</p>
+      <p class="msg" style="font-size:20px;font-weight:700">${esc(g.type)}</p>
+      <div class="bar"><div style="width:${Math.min(100, g.progress * 100)}%"></div></div>
+      <div class="row"><span>${money(g.saved)} saved (${pct(g.progress)})</span><span>${money(g.remaining)} to go</span></div>
+      <p class="note">Goal: ${money(g.target)}</p>
+    </div>`;
+  const rows = deposits.map(d => {
+    const [label, cls] = DEP_OUTCOME[d.outcome];
+    const short = d.outcome === 'partial' || d.outcome === 'none'
+      ? `<p class="note">Planned ${money(d.planned)}. Only ${money(d.amount)} was actually left over that week, so that's what moved.</p>`
+      : d.outcome === 'pending' ? '<p class="note">Set to move this payday. The final amount is confirmed at your next payday.</p>' : '';
+    const found = short + (d.found_money || []).map(f => `<p class="note">Includes found money: ${f.kind === 'duplicate' ? 'Canceled' : 'Avoiding'} ${esc(f.merchant)}, ${money(f.monthly_amount)} a month</p>`).join('');
+    return `
+      <div class="dep-row">
+        <div class="dep-top"><span>${esc(plainDate(d.date))}</span><span class="amt">${money(d.amount)}</span><span class="badge ${cls}">${label}</span></div>
+        ${found}
+      </div>`;
+  }).join('');
+  const history = `
+    <div class="card">
+      <p class="eyebrow">Deposit history</p>
+      ${deposits.length ? rows : '<p class="note">No deposits yet. Accept a recommendation on the Coach tab to get started.</p>'}
+    </div>`;
+  $('main').innerHTML = goalCard + history;
+}
+
+function show(screen) {
+  state.screen = screen;
+  for (const s of ['coach', 'notifications', 'data']) $('tab-' + s).classList.toggle('on', screen === s);
+  $('tabbar-coach').classList.toggle('on', screen !== 'goals' && screen !== 'settings');
+  $('tabbar-goals').classList.toggle('on', screen === 'goals');
+  $('tabbar-settings').classList.toggle('on', screen === 'settings');
+  if (screen === 'coach') loadRecommendation();
+  else if (screen === 'goals') loadGoals();
+  else if (screen === 'settings') loadSettings();
+  else if (screen === 'notifications') loadNotifications();
+  else loadQuality(false);
+}
+$('member').addEventListener('change', async e => { state.member = e.target.value; state.chat = []; state.alerts.chat = null; state.alerts.checkin = null; state.leaksDismissed = new Set(); state.leaksNoted = new Set(); clearTimeout(state._rewardTimer); state.reward = null; setReplay(await api(`/api/replay?member_id=${state.member}`)); show(state.screen === 'data' ? 'coach' : state.screen); });
+$('corrupt').addEventListener('change', e => { state.corrupt = e.target.checked; if (state.screen === 'coach') loadRecommendation(); });
+
+loadMembers().then(() => show('coach')).catch(e => { $('main').innerHTML = `<div class="card">${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

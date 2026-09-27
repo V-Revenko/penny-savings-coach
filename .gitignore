@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/gesa.db
+.pytest_cache/
+
+# PyInstaller / MSI build output (regenerate with installer\build.ps1)
+installer/dist/
+installer/build/
+installer/*.msi
